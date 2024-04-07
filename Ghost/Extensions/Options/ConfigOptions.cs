@@ -6,4 +6,5 @@ public class ConfigOptions
 
     public string Key { get; set; }
     public int Probability { get; set; }
+    public string Cron { get; set; }
 }

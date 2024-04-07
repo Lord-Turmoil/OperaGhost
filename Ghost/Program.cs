@@ -2,9 +2,11 @@ using Arch.EntityFrameworkCore.UnitOfWork;
 using AutoMapper;
 using Ghost.Extensions.Options;
 using Ghost.Models;
+using Ghost.Services;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
+using Quartz;
 using RestSharp;
 using Tonisoft.AspExtensions.Cors;
 using Tonisoft.AspExtensions.Email;
@@ -38,12 +40,27 @@ public class Program
             builder.AddCors(CorsOptions.CorsSection);
 
             builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.EmailSection));
-            builder.Services.Configure<ConfigOptions>(builder.Configuration.GetSection(ConfigOptions.ConfigSection));
+            IConfigurationSection configSection = builder.Configuration.GetSection(ConfigOptions.ConfigSection);
+            builder.Services.Configure<ConfigOptions>(configSection);
+            var config = new ConfigOptions();
+            configSection.Bind(config);
 
             builder.Services.AddSingleton<IRestClient>(
                 new RestClient(new RestClientOptions("https://zenquotes.io/api/") {
                     MaxTimeout = 5000
                 }));
+
+            builder.Services.AddQuartz(q => {
+                var jobKey = new JobKey("SendEmailJob");
+                q.AddJob<SendEmailJob>(opts => opts.WithIdentity(jobKey));
+
+                q.AddTrigger(opts => opts
+                    .ForJob(jobKey)
+                    .WithIdentity("SendEmailJob-trigger")
+                    .WithCronSchedule(config.Cron)
+                );
+            });
+            builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
             if (!builder.Environment.IsDevelopment())
             {
