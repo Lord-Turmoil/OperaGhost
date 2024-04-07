@@ -17,17 +17,20 @@ public class AdminController : BaseController<AdminController>
     private readonly ConfigOptions _options;
     private readonly IContactService _contactService;
     private readonly ILetterService _letterService;
+    private readonly IEmailDaemon _daemon;
 
     public AdminController(
         IMapper mapper,
         ILogger<AdminController> logger,
         IOptions<ConfigOptions> options,
         IContactService contactService,
-        ILetterService letterService)
+        ILetterService letterService,
+        IEmailDaemon daemon)
         : base(mapper, logger)
     {
         _contactService = contactService;
         _letterService = letterService;
+        _daemon = daemon;
         _options = options.Value;
     }
 
@@ -75,6 +78,26 @@ public class AdminController : BaseController<AdminController>
         return new OkResponse(new OkDto(data: _mapper.Map<Contact, ContactDto>(contact)));
     }
 
+    [HttpDelete]
+    public async Task<ApiResponse> DeleteContact([FromQuery] string key, [FromQuery] int id)
+    {
+        if (!_options.Key.Equals(key))
+        {
+            return new UnauthorizedResponse(new UnauthorizedDto());
+        }
+
+        try
+        {
+            await _contactService.DeleteContactAsync(id);
+        }
+        catch (Exception e)
+        {
+            return new InternalServerErrorResponse(new InternalServerErrorDto(e.Message));
+        }
+
+        return new OkResponse(new OkDto());
+    }
+
     [HttpGet]
     public async Task<ApiResponse> GetAllLetters([FromQuery] string key)
     {
@@ -117,5 +140,39 @@ public class AdminController : BaseController<AdminController>
         Letter letter = await _letterService.CreateLetterAsync(dto.Subject, dto.Body);
 
         return new OkResponse(new OkDto(data: _mapper.Map<Letter, LetterDto>(letter)));
+    }
+
+    [HttpDelete]
+    public async Task<ApiResponse> DeleteLetter([FromQuery] string key, [FromQuery] int id)
+    {
+        if (!_options.Key.Equals(key))
+        {
+            return await Task.FromResult<ApiResponse>(new UnauthorizedResponse(new UnauthorizedDto()));
+        }
+
+        try
+        {
+            await _letterService.DeleteLetterAsync(id);
+        }
+        catch (Exception e)
+        {
+            return new InternalServerErrorResponse(new InternalServerErrorDto(e.Message));
+        }
+
+        return new OkResponse(new OkDto());
+    }
+
+
+    [HttpPost]
+    public ApiResponse Send([FromQuery] string key)
+    {
+        if (!_options.Key.Equals(key))
+        {
+            return new UnauthorizedResponse(new UnauthorizedDto());
+        }
+
+        _daemon.SendImmediate();
+
+        return new OkResponse(new OkDto());
     }
 }

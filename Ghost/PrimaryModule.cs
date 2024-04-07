@@ -14,7 +14,11 @@ public class PrimaryModule : BaseModule
             .AddCustomRepository<Letter, LetterRepository>();
 
         services.AddScoped<IContactService, ContactService>()
-            .AddScoped<ILetterService, LetterService>();
+            .AddScoped<ILetterService, LetterService>()
+            .AddScoped<IApiService, ApiService>();
+
+        services.AddSingleton<IEmailDaemon, EmailDaemon>();
+        services.AddHostedService(provider => provider.GetRequiredService<IEmailDaemon>());
 
         return services;
     }

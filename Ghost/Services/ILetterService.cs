@@ -1,4 +1,5 @@
-﻿using Ghost.Models;
+﻿using Ghost.Dtos;
+using Ghost.Models;
 
 namespace Ghost.Services;
 
@@ -10,4 +11,6 @@ public interface ILetterService
     Task DeleteLetterAsync(int id);
 
     Task<Letter> CreateLetterAsync(string subject, string body);
+
+    Task<LetterDto?> GetNextLetter();
 }

@@ -1,6 +1,6 @@
-﻿using System.Runtime.InteropServices;
-using Arch.EntityFrameworkCore.UnitOfWork;
+﻿using Arch.EntityFrameworkCore.UnitOfWork;
 using AutoMapper;
+using Ghost.Dtos;
 using Ghost.Models;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Tonisoft.AspExtensions.Module;
@@ -10,7 +10,9 @@ namespace Ghost.Services.Impl;
 public class LetterService : BaseService<LetterService>, ILetterService
 {
     private readonly IRepository<Letter> _repo;
-    public LetterService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<LetterService> logger, IRepository<Letter> repo)
+
+    public LetterService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<LetterService> logger,
+        IRepository<Letter> repo)
         : base(unitOfWork, mapper, logger)
     {
         _repo = repo;
@@ -43,5 +45,18 @@ public class LetterService : BaseService<LetterService>, ILetterService
         });
         await _unitOfWork.SaveChangesAsync();
         return letter.Entity;
+    }
+
+    public async Task<LetterDto?> GetNextLetter()
+    {
+        Letter? letter = await _repo.GetFirstOrDefaultAsync(predicate: l => !l.IsSent, disableTracking: false);
+        if (letter == null)
+        {
+            return null;
+        }
+        letter.IsSent = true;
+        await _unitOfWork.SaveChangesAsync();
+
+        return _mapper.Map<Letter, LetterDto>(letter);
     }
 }

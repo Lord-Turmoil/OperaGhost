@@ -5,6 +5,7 @@ using Ghost.Models;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
+using RestSharp;
 using Tonisoft.AspExtensions.Cors;
 using Tonisoft.AspExtensions.Email;
 using Tonisoft.AspExtensions.Module;
@@ -39,8 +40,16 @@ public class Program
             builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.EmailSection));
             builder.Services.Configure<ConfigOptions>(builder.Configuration.GetSection(ConfigOptions.ConfigSection));
 
-            builder.Logging.ClearProviders();
-            builder.Host.UseNLog();
+            builder.Services.AddSingleton<IRestClient>(
+                new RestClient(new RestClientOptions("https://zenquotes.io/api/") {
+                    MaxTimeout = 5000
+                }));
+
+            if (!builder.Environment.IsDevelopment())
+            {
+                builder.Logging.ClearProviders();
+                builder.Host.UseNLog();
+            }
 
             WebApplication app = builder.Build();
 
