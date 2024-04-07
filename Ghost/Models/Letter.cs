@@ -16,8 +16,7 @@ public class Letter
     public bool IsSent { get; set; }
 
     public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
-    public DateTime SentAt { get; set; }
+    public DateTime? SentAt { get; set; }
 }
 
 public class LetterRepository : Repository<Letter>

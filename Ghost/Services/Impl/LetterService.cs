@@ -41,7 +41,10 @@ public class LetterService : BaseService<LetterService>, ILetterService
     {
         EntityEntry<Letter> letter = await _repo.InsertAsync(new Letter {
             Subject = subject,
-            Body = body
+            Body = body,
+            IsSent = false,
+            CreatedAt = DateTime.Now,
+            SentAt = null
         });
         await _unitOfWork.SaveChangesAsync();
         return letter.Entity;
@@ -55,6 +58,7 @@ public class LetterService : BaseService<LetterService>, ILetterService
             return null;
         }
         letter.IsSent = true;
+        letter.SentAt = DateTime.Now;
         await _unitOfWork.SaveChangesAsync();
 
         return _mapper.Map<Letter, LetterDto>(letter);
