@@ -78,9 +78,12 @@ public class EmailDaemon : IEmailDaemon
             LetterDto letter = await GetNextLetter(provider);
             IEnumerable<ContactDto> contacts = await GetAllContacts(provider);
             string template = await File.ReadAllTextAsync("Template.html");
+            _logger.LogInformation("Sending letter {id}/{subject} to {count} contacts", letter.Id, letter.Subject, contacts.Count());
             foreach (ContactDto contact in contacts)
             {
+                _logger.LogInformation("Sending letter to {name} ({email})", contact.Name, contact.Email);
                 SendLetter(contact, letter, template);
+                _logger.LogInformation("Letter sent to {name} ({email})", contact.Name, contact.Email);
             }
         }
         catch (Exception e)
